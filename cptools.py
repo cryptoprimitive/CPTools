@@ -29,6 +29,14 @@ grantableUpdates = web3.eth.contract(address = GrantableUpdatesAddress, abi = Gr
 #grantableUpdatesFilter = grantableUpdates.eventFilter("Update", {'fromBlock':GLOBAL_FROMBLOCK})
 #allUpdates = grantableUpdatesFilter.get_all_entries()
 
+def getTxHashIfSuccessful(txHash):
+	isBytes = isinstance(txHash, bytes)
+	if (isBytes):
+		return web3.toHex(txHash)
+	else:
+		print("Error! expected txhash, but got a " + str(type(txHash)))
+		return False
+
 def newAccount():
 	password = getpass("Password for new account: ")
 	if (getpass("Confirm password: ") != password):
@@ -46,10 +54,15 @@ def newAccount():
 	
 	willFund = input("Fund new account with 0.005 ETH from an existing account? (y/n):  ")
 	if (willFund.lower() == 'y'):
-		fundingAddress = pickAccountInteractively("Fund from which account? ")
+		fundingAddress = pickAccountInteractively("Fund from account # ")
 		authorizeAndUnlock(fundingAddress, "Password for funding account: ")
-		print(web3.eth.sendTransaction({'from':fundingAddress, 'to':newAddress, 'value':web3.toWei(0.005, 'ether')}))
-	
+		txHash = getTxHashIfSuccessful(web3.eth.sendTransaction({'from':fundingAddress, 'to':newAddress, 'value':web3.toWei(0.005, 'ether')}))
+		if (txHash):
+			print("Transaction signed and broadcast: " + txHash)
+		relock(fundingAddress)
+
+def getAccountAddress(accountNum):
+	return web3.personal.listAccounts[accountNum]
 
 def printNumberedAccountList():
 	# Oddly, web3.personal.listAccounts looks like a variable but behaves like a function.
@@ -59,12 +72,12 @@ def printNumberedAccountList():
 	for i in range(len(accounts)):
 		print(str(i) + ".  " + accounts[i])
 
-def pickAccountInteractively(prompt = "Use account #: "):
+def pickAccountInteractively(prompt = "Account #"):
 	printNumberedAccountList()
 	print()
 
-	accountNum = input(prompt)
-	return web3.personal.listAccounts[int(accountNum)]
+	accountNum = int(input(prompt))
+	return getAccountAddress(accountNum)
 
 def authorizeAndUnlock(account, prompt="Account password: "):
 	password = getpass(prompt)
@@ -85,26 +98,30 @@ def printUpdates():
 		print(str(update.args.agent) + ": " + update.args.data)
 
 def postUpdate():
-	account = pickAccountInteractively()
+	account = pickAccountInteractively("Post from account #")
 
 	message = input("message: ")
 
 	if (not authorizeAndUnlock(account)):
 		return
 
-	print(grantableUpdates.functions.postUpdate(message).transact({"from":account}))
+	txHash = getTxHashIfSuccessful(grantableUpdates.functions.postUpdate(message).transact({"from":account}))
+	if (txHash):
+		print("Transaction signed and broadcast: " + txHash)
 
 	relock(account)
 
 def grantUpdateTo():
-	account = pickAccountInteractively()
+	account = pickAccountInteractively("Use which account to grant permissions? #")
 
 	grantToAddress = input("Grant 'update' permission to what address? ")
 
 	if (not authorizeAndUnlock(account)):
 		return
 
-	print(grantableUpdates.functions.grantUpdatePermissionTo(grantToAddress).transact({'from':account}))
+	txHash = getTxHashIfSuccessful(grantableUpdates.functions.grantUpdatePermissionTo(grantToAddress).transact({'from':account}))
+	if (txHash):
+		print("Transaction signed and broadcast: " + txHash)
 
 	relock(account)
 
