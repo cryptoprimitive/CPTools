@@ -10,9 +10,11 @@ BPFactoryAddress = "0xA225EbE73347dd87492868332F9B746bEb8499bb"
 GrantableUpdatesAddress = "0xc9e8E364a009fcf35BD493b84959eDFf6caCCF72";
 
 #ABIs
-with open('ABIs/BPFactory.json', 'r') as infile:
+import os
+dir_path = os.path.dirname(os.path.realpath(__file__))
+with open(dir_path + '/ABIs/BPFactory.json', 'r') as infile:
 	BPFactoryABI = json.load(infile)
-with open('ABIs/GrantableUpdates.json', 'r') as infile:
+with open(dir_path + '/ABIs/GrantableUpdates.json', 'r') as infile:
 	GrantableUpdatesABI = json.load(infile)
 
 web3 = Web3(HTTPProvider("https://gladly-golden-parrot.quiknode.io/8959339e-f0ab-4403-876f-1aed9422a44f/xh9aJBYpYQHEhu6q8jQrkA==/"))
@@ -30,11 +32,11 @@ grantableUpdates = web3.eth.contract(address = GrantableUpdatesAddress, abi = Gr
 def printNumberedAccountList():
 	for i in range(len(web3.personal.listAccounts)):
 		print(str(i) + ".  " + web3.personal.listAccounts[i])
-	
+
 def pickAccountInteractively():
 	printNumberedAccountList()
 	print()
-	
+
 	accountNum = input("Use which account #? ")
 	return web3.personal.listAccounts[int(accountNum)]
 
@@ -58,28 +60,28 @@ def printUpdates():
 
 def postUpdate():
 	account = pickAccountInteractively()
-	
+
 	message = input("message: ")
-	
+
 	if (not authorizeAndUnlock(account)):
 		return
-	
+
 	print(grantableUpdates.functions.postUpdate(message).transact({"from":account}))
-	
+
 	relock(account)
 
 def grantUpdateTo():
 	account = pickAccountInteractively()
-	
+
 	grantToAddress = input("Grant 'update' permission to what address? ")
-	
+
 	if (not authorizeAndUnlock(account)):
 		return
-	
+
 	print(grantableUpdates.functions.grantUpdatePermissionTo(grantToAddress).transact({'from':account}))
-	
+
 	relock(account)
-	
+
 
 output = """functions:
 printUpdates() - prints all updates from the GrantableUpdates contract
