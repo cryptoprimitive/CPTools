@@ -1,33 +1,11 @@
-from web3 import Web3, HTTPProvider
 from pprint import pprint
 from getpass import getpass
-import json, os
+from init_web3 import *
 
-GLOBAL_FROMBLOCK = 4435671
-
-#addresses
-BPFactoryAddress = "0xA225EbE73347dd87492868332F9B746bEb8499bb"
-GrantableUpdatesAddress = "0xc9e8E364a009fcf35BD493b84959eDFf6caCCF72";
-
-#ABIs
-import os
-dir_path = os.path.dirname(os.path.realpath(__file__))
-with open(dir_path + '/ABIs/BPFactory.json', 'r') as infile:
-	BPFactoryABI = json.load(infile)
-with open(dir_path + '/ABIs/GrantableUpdates.json', 'r') as infile:
-	GrantableUpdatesABI = json.load(infile)
-
-web3 = Web3(HTTPProvider("https://gladly-golden-parrot.quiknode.io/8959339e-f0ab-4403-876f-1aed9422a44f/xh9aJBYpYQHEhu6q8jQrkA==/"))
+GrantableUpdatesABI = loadABI('ABIs/GrantableUpdates.json');
 
 #Contract instances
-BPFactory = web3.eth.contract(address = BPFactoryAddress, abi = BPFactoryABI)
 grantableUpdates = web3.eth.contract(address = GrantableUpdatesAddress, abi = GrantableUpdatesABI)
-
-#BPCreationFilter = BPFactory.eventFilter("NewBurnablePayment", {'fromBlock':GLOBAL_FROMBLOCK})
-#BPCreationEvents = BPCreationFilter.get_all_entries()
-
-#grantableUpdatesFilter = grantableUpdates.eventFilter("Update", {'fromBlock':GLOBAL_FROMBLOCK})
-#allUpdates = grantableUpdatesFilter.get_all_entries()
 
 def getTxHashIfSuccessful(txHash):
 	isBytes = isinstance(txHash, bytes)
@@ -42,16 +20,16 @@ def newAccount():
 	if (getpass("Confirm password: ") != password):
 		print("Passwords do not match!")
 		return
-	
+
 	newAddress = web3.personal.newAccount(password)
 	accountNum = len(web3.personal.listAccounts) - 1
-	
+
 	assert(web3.personal.listAccounts[accountNum] == newAddress)
 	print()
 	print("---Account created!---")
 	print("Account number: " + str(accountNum))
 	print("Address: " + newAddress)
-	
+
 	willFund = input("Fund new account with 0.005 ETH from an existing account? (y/n):  ")
 	if (willFund.lower() == 'y'):
 		fundingAddress = pickAccountInteractively("Fund from account # ")
@@ -67,8 +45,8 @@ def getAccountAddress(accountNum):
 def printNumberedAccountList():
 	# Oddly, web3.personal.listAccounts looks like a variable but behaves like a function.
 	# So we have to "run" the variable and store the result, to avoid "running" the variable every loop
-	accounts = web3.personal.listAccounts 
-	
+	accounts = web3.personal.listAccounts
+
 	for i in range(len(accounts)):
 		print(str(i) + ".  " + accounts[i])
 
