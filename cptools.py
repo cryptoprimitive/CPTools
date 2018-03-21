@@ -1,5 +1,6 @@
 from web3 import Web3, HTTPProvider
 from pprint import pprint
+from getpass import getpass
 import json, os
 
 GLOBAL_FROMBLOCK = 4435671
@@ -38,7 +39,7 @@ def pickAccountInteractively():
 	return web3.personal.listAccounts[int(accountNum)]
 
 def authorizeAndUnlock(account):
-	password = input("Ready to sign. Account password: ")
+	password = getpass("Ready to sign. Account password: ")
 	if (not web3.personal.unlockAccount(account, password)):
 		print("password incorrect. Aborting.")
 		return False
@@ -89,4 +90,4 @@ grantUpdateTo() - interactively grant update rights to another address for the G
 print()
 print(output)
 print()
-printUpdates()
+#printUpdates()
