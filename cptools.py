@@ -29,19 +29,45 @@ grantableUpdates = web3.eth.contract(address = GrantableUpdatesAddress, abi = Gr
 #grantableUpdatesFilter = grantableUpdates.eventFilter("Update", {'fromBlock':GLOBAL_FROMBLOCK})
 #allUpdates = grantableUpdatesFilter.get_all_entries()
 
-def printNumberedAccountList():
-	for i in range(len(web3.personal.listAccounts)):
-		print(str(i) + ".  " + web3.personal.listAccounts[i])
+def newAccount():
+	password = getpass("Password for new account: ")
+	if (getpass("Confirm password: ") != password):
+		print("Passwords do not match!")
+		return
+	
+	newAddress = web3.personal.newAccount(password)
+	accountNum = len(web3.personal.listAccounts) - 1
+	
+	assert(web3.personal.listAccounts[accountNum] == newAddress)
+	print()
+	print("---Account created!---")
+	print("Account number: " + str(accountNum))
+	print("Address: " + newAddress)
+	
+	willFund = input("Fund new account with 0.005 ETH from an existing account? (y/n):  ")
+	if (willFund.lower() == 'y'):
+		fundingAddress = pickAccountInteractively("Fund from which account? ")
+		authorizeAndUnlock(fundingAddress, "Password for funding account: ")
+		print(web3.eth.sendTransaction({'from':fundingAddress, 'to':newAddress, 'value':web3.toWei(0.005, 'ether')}))
+	
 
-def pickAccountInteractively():
+def printNumberedAccountList():
+	# Oddly, web3.personal.listAccounts looks like a variable but behaves like a function.
+	# So we have to "run" the variable and store the result, to avoid "running" the variable every loop
+	accounts = web3.personal.listAccounts 
+	
+	for i in range(len(accounts)):
+		print(str(i) + ".  " + accounts[i])
+
+def pickAccountInteractively(prompt = "Use account #: "):
 	printNumberedAccountList()
 	print()
 
-	accountNum = input("Use which account #? ")
+	accountNum = input(prompt)
 	return web3.personal.listAccounts[int(accountNum)]
 
-def authorizeAndUnlock(account):
-	password = getpass("Ready to sign. Account password: ")
+def authorizeAndUnlock(account, prompt="Account password: "):
+	password = getpass(prompt)
 	if (not web3.personal.unlockAccount(account, password)):
 		print("password incorrect. Aborting.")
 		return False
@@ -84,6 +110,7 @@ def grantUpdateTo():
 
 
 output = """functions:
+newAccount() - Interactively creates a new account, optionally granting it 0.005 ETH of "seed funds" from another account
 printUpdates() - prints all updates from the GrantableUpdates contract
 postUpdate() - interactively posts message to the update feed
 grantUpdateTo() - interactively grant update rights to another address for the GrantableUpdates contract
