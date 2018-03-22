@@ -9,6 +9,5 @@ BPFactory = web3.eth.contract(address = BPFactoryAddress, abi = loadABI('ABIs/BP
 # allUpdates = grantableUpdatesFilter.get_all_entries()
 
 def getBPCount():
-    bp_count = BPFactory.call().getBPCount()
-    print("Number of BPs:", bp_count)
+    bp_count = BPFactory.functions.getBPCount().call()
     return bp_count
