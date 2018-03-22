@@ -11,3 +11,6 @@ BPFactory = web3.eth.contract(address = BPFactoryAddress, abi = loadABI('ABIs/BP
 def getBPCount():
     bp_count = BPFactory.functions.getBPCount().call()
     return bp_count
+
+if __name__ == "__main__":
+    print("Number of BP contracts:", getBPCount())

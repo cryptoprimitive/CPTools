@@ -114,4 +114,6 @@ grantUpdateTo() - interactively grant update rights to another address for the G
 print()
 print(output)
 print()
-#printUpdates()
+
+if __name__ == "__main__":
+	printUpdates()
