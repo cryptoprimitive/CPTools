@@ -9,6 +9,10 @@ GrantableUpdatesAddress = "0xc9e8E364a009fcf35BD493b84959eDFf6caCCF72";
 def loadABI(contract_json_filename):
     fullpath_filename = os.path.dirname(os.path.realpath(__file__)) + '/' + contract_json_filename
     with open(fullpath_filename, 'r') as infile:
-	        return json.load(infile)
+        data = json.load(infile)
+    if isinstance(data, dict) and data["abi"]:
+        return data["abi"]
+    else:
+        return data
 
 web3 = Web3(HTTPProvider("https://gladly-golden-parrot.quiknode.io/8959339e-f0ab-4403-876f-1aed9422a44f/xh9aJBYpYQHEhu6q8jQrkA==/"))
