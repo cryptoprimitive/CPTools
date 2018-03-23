@@ -1,11 +1,25 @@
 from pprint import pprint
 from getpass import getpass
 from init_web3 import *
+from urllib.request import urlopen
+import json
 
 GrantableUpdatesABI = loadABI('ABIs/GrantableUpdates.json');
 
 #Contract instances
 grantableUpdates = web3.eth.contract(address = GrantableUpdatesAddress, abi = GrantableUpdatesABI)
+
+def fetchABIFromEtherscan(address):
+	html = urlopen("https://api.etherscan.io/api?module=contract&action=getabi&address=" + address + "&apikey=9TBD9VA31ASIGDRID7SBASUHPAHJGPKT17")
+	result = json.loads(html.read())
+	if (result['status'] == '1'):
+		return json.loads(result['result'])
+	else:
+		return None
+	
+def contractInstanceFromAddress(address):
+	abi = fetchABIFromEtherscan(address)
+	return web3.eth.contract(address = address, abi = abi)
 
 def getTxHashIfSuccessful(txHash):
 	isBytes = isinstance(txHash, bytes)
