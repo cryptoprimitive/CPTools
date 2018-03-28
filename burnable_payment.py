@@ -1,5 +1,7 @@
+from utils import loadABI
 from init_web3 import *
 
+BPFactoryAddress = "0xA225EbE73347dd87492868332F9B746bEb8499bb"
 BPFactory = web3.eth.contract(address = BPFactoryAddress, abi = loadABI('ABIs/BPFactory.json'))
 
 # BPCreationFilter = BPFactory.eventFilter("NewBurnablePayment", {'fromBlock':GLOBAL_FROMBLOCK})
