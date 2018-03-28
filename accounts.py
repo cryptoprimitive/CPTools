@@ -25,10 +25,27 @@ def initLocalAccount():
         createLocalAccount()
     with open(CYPHER_SECRETE_FILE, 'rb') as f:
         encrypt_private_key = f.read()
-    password = getpass("Enter your password: ")
+    password = getpass("Enter your password to use local account: ")
     LOCAL_STORAGE['private_key'] = decrypt(password, encrypt_private_key)
     LOCAL_STORAGE['account'] = w3.eth.account.privateKeyToAccount(LOCAL_STORAGE['private_key'])
 
+# https://pythontips.com/2013/08/04/args-and-kwargs-in-python-explained/
+# buildSignSendTx(donator.functions.donate, 7, value=3, gas=99000)
+def buildSignSendTx(fargs,*args,**kwargs):
+    if not LOCAL_STORAGE['account']:
+        initLocalAccount()
+    print(kwargs)
+    kwargs['nonce'] = web3.eth.getTransactionCount(LOCAL_STORAGE['account'].address)
+    if (not 'chainId' in kwargs):
+        kwargs['chainId'] = 1
+    if (not 'gas' in kwargs):
+        kwargs['gas'] = 200000
+    if (not 'gasPrice' in kwargs):
+        kwargs['gasPrice'] = web3.toWei('1', 'gwei')
+    print(kwargs)
+    txn = fargs(*args).buildTransaction(kwargs)
+    signed_txn = web3.eth.account.signTransaction(txn, private_key=LOCAL_STORAGE['private_key'])
+    web3.eth.sendRawTransaction(signed_txn.rawTransaction)
 
 def newAccount():
 	password = getpass("Password for new account: ")
