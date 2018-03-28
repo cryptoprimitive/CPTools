@@ -1,0 +1,3 @@
+[submodule "ethereum-mnemonic-utils"]
+	path = ethereum-mnemonic-utils
+	url = https://github.com/vergl4s/ethereum-mnemonic-utils.git

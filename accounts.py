@@ -2,6 +2,34 @@ from getpass import getpass
 from utils import *
 from init_web3 import *
 
+import os, sys
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, dir_path + '/ethereum-mnemonic-utils')
+from mnemonic_utils import mnemonic_to_private_key
+
+import os.path
+CYPHER_SECRETE_FILE = 'cyphersecrete.txt'
+LOCAL_STORAGE = {'private_key': None, 'account': None}
+
+from web3.auto import w3
+
+def createLocalAccount():
+    seed = input("Enter your 12 seed words to init your private key: ")
+    password = getpass("Enter your password to protect your private key: ")
+    encrypt_private_key = encrypt(password, mnemonic_to_private_key(seed))
+    with open(CYPHER_SECRETE_FILE, 'wb') as f:
+        f.write(encrypt_private_key)
+
+def initLocalAccount():
+    if (not os.path.exists(CYPHER_SECRETE_FILE)):
+        createLocalAccount()
+    with open(CYPHER_SECRETE_FILE, 'rb') as f:
+        encrypt_private_key = f.read()
+    password = getpass("Enter your password: ")
+    LOCAL_STORAGE['private_key'] = decrypt(password, encrypt_private_key)
+    LOCAL_STORAGE['account'] = w3.eth.account.privateKeyToAccount(LOCAL_STORAGE['private_key'])
+
+
 def newAccount():
 	password = getpass("Password for new account: ")
 	if (getpass("Confirm password: ") != password):
@@ -55,3 +83,6 @@ def authorizeAndUnlock(account, prompt="Account password: "):
 def relock(account):
 	print("Relocking account.")
 	web3.personal.lockAccount(account)
+
+if __name__ == "__main__":
+	initLocalAccount()

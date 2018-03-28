@@ -1,5 +1,16 @@
 import json, os
 from urllib.request import urlopen
+# pip install pycrypto
+from Crypto.Cipher import XOR
+import base64
+
+def encrypt(key, plaintext):
+  cipher = XOR.new(key)
+  return base64.b64encode(cipher.encrypt(plaintext))
+
+def decrypt(key, ciphertext):
+  cipher = XOR.new(key)
+  return cipher.decrypt(base64.b64decode(ciphertext))
 
 def loadABI(contract_json_filename):
     fullpath_filename = os.path.dirname(os.path.realpath(__file__)) + '/' + contract_json_filename
