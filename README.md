@@ -16,7 +16,7 @@ Install web3py beta
 ```
 pip install web3 --pre
 # - OR -
-pip install web3==4.0.0b11
+pip install web3==4.0.0b13
 ```
 
 Add cptools to your project
