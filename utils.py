@@ -3,6 +3,7 @@ from urllib.request import urlopen
 # pip install pycrypto
 # from Crypto.Cipher import XOR
 import base64
+from init_web3 import *
 
 def encrypt(key, plaintext):
   # cipher = XOR.new(key).encrypt(plaintext)
