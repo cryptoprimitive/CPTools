@@ -18,9 +18,6 @@ Install web3py beta, and required libraries
 pip install -r requirements.txt
 ```
 
-For accounts.createLocalAccount() you can use below seed phrase for testing.
-"legal winner thank year wave sausage worth useful legal winner thank yellow"
-
 Add cptools to your project
 ```
 git submodule add https://github.com/cryptoprimitive/CPTools.git cptools

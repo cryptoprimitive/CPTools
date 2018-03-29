@@ -9,9 +9,12 @@ CYPHER_SECRETE_FILE = 'cyphersecrete.txt'
 LOCAL_STORAGE = {'private_key': None, 'account': None}
 
 from web3.auto import w3
-
+from mnemonic import Mnemonic
 def createLocalAccount():
-    seed = input("Enter your 12 seed words to init your private key: ")
+    seed = input("Press Enter to get a new one or Enter your seed phrase to init your private key: ")
+    if len(seed.strip()) == 0:
+        seed = Mnemonic('english').generate()
+        print('!!! Keep your seed phrase safe !!!:', seed)
     password = getpass("Enter your password to protect your private key: ")
     encrypt_private_key = encrypt(password, mnemonic_to_private_key(seed))
     with open(CYPHER_SECRETE_FILE, 'wb') as f:
