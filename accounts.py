@@ -2,9 +2,6 @@ from getpass import getpass
 from utils import *
 from init_web3 import *
 
-import os, sys
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, dir_path + '/ethereum-mnemonic-utils')
 from mnemonic_utils import mnemonic_to_private_key
 
 import os.path
