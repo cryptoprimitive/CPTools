@@ -11,47 +11,47 @@ import json
 AGENTSFILE = "agents.json"
 
 class Agent:
-    def __init__(self, mnemonic):
-        self.mnemonic = mnemonic
-        self.priv = mnemonic_to_private_key(mnemonic)
-        self.address = web3.eth.account.privateKeyToAccount(self.priv).address
+    def __init__(self, address, password):
+        self.address = address
+        self.password = password
+    
+    def unlockAccount(self):
+        web3.personal.unlockAccount(self.address, self.password)
+    
+    def lockAccount(self):
+        web3.personal.lockAccount(self.address)
     
     def callContractFunction(self, function, *args, **kwargs):
-        kwargs['nonce'] = web3.eth.getTransactionCount(self.address)
-        if (not 'chainId' in kwargs):
-            kwargs['chainId'] = 1
-        if (not 'gas' in kwargs):
-            kwargs['gas'] = 200000
-        if (not 'gasPrice' in kwargs):
-            kwargs['gasPrice'] = web3.toWei('5', 'gwei')
-        txn = function(*args).buildTransaction(kwargs)
-        return txn
-        kwargs['gas'] = web3.eth.estimateGas(txn)
-        print(kwargs)
-        txn = function(*args).buildTransaction(kwargs)
-        signed_txn = web3.eth.account.signTransaction(txn, private_key=self.priv)
-        print(getTxHashIfSuccessful(web3.eth.sendRawTransaction(signed_txn.rawTransaction)))
+        kwargs['from'] = self.address
+        self.unlockAccount()
+        txHash = getTxHashIfSuccessful(function(*args).transact(kwargs))
+        self.lockAccount()
+        print(txHash)
 
 agents = {}
+
+def newAgent():
+    password = Mnemonic('english').generate()
+    
+    address = web3.personal.newAccount(password)
+    
+    return Agent(address, password)
 
 def initAgents():
     global agents
     if (not os.path.exists(AGENTSFILE)):
         print("No agents file found. Creating file with one agent.")
-        mnemonic = Mnemonic('english').generate()
-        shouldPrint = input("New agent created. Print seed phrase? (y/n) ")
-        if (shouldPrint == 'y'):
-            print(mnemonic)
-        agents['main'] = Agent(mnemonic)
+        
+        agents['main'] = newAgent()
         with open(AGENTSFILE, 'w') as f:
-            json.dump({'main':agents['main'].mnemonic}, f)
+            json.dump({'main':{'address':agents['main'].address,'password':agents['main'].password}}, f)
     
     else:
         with open(AGENTSFILE, 'r') as f:
-            agentNamesToMnemonic = json.load(f)
+            agentsDict = json.load(f)
             agents = {}
-            for name in agentNamesToMnemonic:
-                agents[name] = Agent(agentNamesToMnemonic[name])
+            for name in agentsDict:
+                agents[name] = Agent(agentsDict[name]['address'], agentsDict[name]['password'])
     
     print("Agents:")
     for agentName in agents:
