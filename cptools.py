@@ -56,6 +56,14 @@ def newAccount():
 def getAccountAddress(accountNum):
 	return web3.personal.listAccounts[accountNum]
 
+def numOrAddressToAddress(numOrAddress):
+	try:
+		num = int(numOrAddress)
+		return getAccountAddress(num)
+	except ValueError:
+		#TODO validate Eth address. Web3py does not expose this utility, have to dig a bit.
+		return numOrAddress
+
 def printNumberedAccountList():
 	# Oddly, web3.personal.listAccounts looks like a variable but behaves like a function.
 	# So we have to "run" the variable and store the result, to avoid "running" the variable every loop
@@ -106,7 +114,7 @@ def postUpdate():
 def grantUpdateTo():
 	account = pickAccountInteractively("Use which account to grant permissions? #")
 
-	grantToAddress = input("Grant 'update' permission to what address? ")
+	grantToAddress = numOrAddressToAddress(input("Grant 'update' permission to what address? "))
 
 	if (not authorizeAndUnlock(account)):
 		return
