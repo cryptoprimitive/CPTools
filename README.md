@@ -12,11 +12,10 @@ We are using the beta branch of Web3py as well as the [current version](https://
 
 ## Usage
 
-Install web3py beta
+Install web3py beta, and required libraries
+
 ```
-pip install web3 --pre
-# - OR -
-pip install web3==4.0.0b11
+pip install -r requirements.txt
 ```
 
 Add cptools to your project
