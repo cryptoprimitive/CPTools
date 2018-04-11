@@ -1,6 +1,7 @@
 from getpass import getpass
 from mnemonic_utils import mnemonic_to_private_key
 from mnemonic import Mnemonic
+from urllib.request import urlopen
 import os.path, json, re, pyperclip
 
 from easy_web3_connection import easy_web3_connection
@@ -10,6 +11,7 @@ print("web3 connection configured.")
 
 GLOBAL_FROMBLOCK = 4435671
 AGENTS_FILENAME = "agents.json"
+NAMES_FILENAME = "names.json"
 
 class InputError(ValueError):
     pass
@@ -25,6 +27,15 @@ class Agent(json.JSONEncoder):
 
 agents = {}
 names = {}
+
+def ethPriceFromCMC():
+    url = "https://api.coinmarketcap.com/v1/ticker/ethereum/"
+    returned = urlopen(url)
+    decoded = json.loads(returned.read())
+    return float(decoded[0]['price_usd'])
+
+def usdToEth(usd):
+    return usd/ethPriceFromCMC()
 
 def saveAgents():
     dictToSave = {}
@@ -44,12 +55,6 @@ def createAndSaveNewAgent(name, mnemonic=None, printMnemonic=False):
 
     saveAgents()
 
-def createAndSaveNewName(name, address):
-    global names
-    names['name'] = address
-
-    saveNames()
-
 def loadAgents():
     global agents
     with open(AGENTS_FILENAME, 'r') as f:
@@ -64,12 +69,31 @@ def loadAgentsOrInitializeAgentsFile():
     except FileNotFoundError:
         createAndSaveNewAgent('main')
 
+def saveNames():
+    with open(NAMES_FILENAME, 'w') as f:
+        json.dump(names, f)
+
+def createAndSaveNewName(name, address):
+    global names
+    names[name] = address
+
+    saveNames()
+
+def loadNames():
+    global names
+    try:
+        with open(NAMES_FILENAME, 'r') as f:
+            names = json.load(f)
+    except FileNotFoundError:
+        names = {}
 
 def nameToAddress(recipientStr):
     if web3.isAddress(recipientStr):
         return recipientStr
     elif recipientStr in agents:
         return agents[recipientStr].address
+    elif recipientStr in names:
+        return names[recipientStr]
     else:
         raise InputError("'"+recipientStr+"' is not a valid address or name")
 
@@ -101,6 +125,9 @@ def amountStrToWei(amountStr):
         unitStr = 'wei'
     elif unitStr.lower() == 'gw' or unitStr.lower() == 'gwei':
         unitStr = 'gwei'
+    elif unitStr == "$":
+        amountNumber = usdToEth(amountNumber)
+        unitStr = 'ether'
 
     #pass to web3 to translate to wei
     return web3.toWei(amountNumber, unitStr)
@@ -157,12 +184,35 @@ def cmd_balance(args):
 
     print(web3.fromWei(web3.eth.getBalance(addr), 'ether'))
 
+def cmd_addname(args):
+    if not web3.isAddress(args[1]):
+        raise InputError("'"+args[1]+"' is not a valid address")
+
+    checksummed = web3.toChecksumAddress(args[1])
+    createAndSaveNewName(args[0], checksummed)
+
+    print("Name '"+args[0]+"' added with address '"+checksummed+"'")
+
+def cmd_names():
+    print("names:")
+    for name in names:
+        print(name+":", names[name])
+
+def cmd_use(args):
+    global selectedAgent
+    if not args[0] in agents:
+        raise InputError("'"+args[0]+"' not in agents")
+    selectedAgent = args[0]
+
 def main():
     global agents
+    global names
     global selectedAgent
     global gasPrice
 
     loadAgentsOrInitializeAgentsFile()
+    loadNames()
+
     selectedAgent = 'main'
 
     print("Setting gasPrice to 5 gwei.")
@@ -170,7 +220,7 @@ def main():
 
     while True:
         try:
-            commandString = input('main > ')
+            commandString = input(selectedAgent + ' > ')
             commandName = commandString.split(' ')[0]
             commandArgs = commandString.split(' ')[1:]
 
@@ -199,8 +249,27 @@ def main():
             if commandName == "balance":
                 cmd_balance(commandArgs)
 
+            if commandName == "addname":
+                if len(commandArgs) != 2:
+                    raise InputError("2 arguments needed (name, address) for addname command")
+                cmd_addname(commandArgs)
+
+            if commandName == "names":
+                cmd_names()
+
+            if commandName == "use":
+                if len(commandArgs) != 1:
+                    raise InputError("1 argument needed (agent-name) for use command")
+                cmd_use(commandArgs)
+
         except InputError as e:
             print("Error:", str(e))
+
+        except ValueError as e:
+            if str(e)[:16] == "{'code': -32000,": # Hacky. I wish web3py raised something more specific than a ValueError.
+                print("Error: insufficient funds")
+            else:
+                raise
 
 if __name__ == "__main__":
     main()
