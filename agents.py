@@ -24,6 +24,7 @@ class Agent(json.JSONEncoder):
         return o.priv
 
 agents = {}
+names = {}
 
 def saveAgents():
     dictToSave = {}
@@ -42,6 +43,12 @@ def createAndSaveNewAgent(name, mnemonic=None, printMnemonic=False):
     agents[name] = newAgent
 
     saveAgents()
+
+def createAndSaveNewName(name, address):
+    global names
+    names['name'] = address
+
+    saveNames()
 
 def loadAgents():
     global agents
