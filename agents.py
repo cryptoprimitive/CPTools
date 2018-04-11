@@ -47,3 +47,5 @@ def loadAgents():
 
     for name in agentMnemonics:
         agents[name] = Agent(agentMnemonics[name])
+
+loadAgents()
