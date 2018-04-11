@@ -1,5 +1,0 @@
-web3==4.0.*
-# pycrypto
-base58
-ecdsa
-mnemonic
