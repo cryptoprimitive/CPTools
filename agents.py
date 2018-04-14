@@ -2,12 +2,14 @@ from getpass import getpass
 from mnemonic_utils import mnemonic_to_private_key
 from mnemonic import Mnemonic
 from urllib.request import urlopen
+from pprint import pprint
 import os.path, json, re, pyperclip
 
-import interfacelog_tools
+import utils, interfacelog_tools
 from easy_web3_connection import easy_web3_connection
 
 web3 = easy_web3_connection()
+web3.eth.enable_unaudited_features()
 print("web3 connection configured.")
 
 ILInterface = interfacelog_tools.InterfaceLogInterface(web3)
@@ -30,6 +32,11 @@ class Agent(json.JSONEncoder):
 
 agents = {}
 names = {}
+contracts = {}
+
+lastTransactionHash = None
+
+waitForTx = True
 
 def ethPriceFromCMC():
     url = "https://api.coinmarketcap.com/v1/ticker/ethereum/"
@@ -136,7 +143,12 @@ def amountStrToWei(amountStr):
     return web3.toWei(amountNumber, unitStr)
 
 def trackTx(commandString, txHash):
-    print("txHash for '"+commandString+"': ", web3.toHex(txHash))
+    if waitForTx:
+        print("Waiting to mine '"+commandString+"': ", web3.toHex(txHash))
+        web3.eth.waitForTransactionReceipt(txHash)
+        print("Mined!")
+    else:
+        print("txHash for '"+commandString+"': ", web3.toHex(txHash))
 
 def cmd_gp(args):
     global gasPrice
@@ -146,6 +158,7 @@ def cmd_gp(args):
         print("Current gas price:", gasPrice)
 
 def cmd_send(args):
+    global lastTransactionHash
     transaction = {
         'to': nameToAddress(args[0]),
         'value': amountStrToWei(args[1]),
@@ -157,7 +170,9 @@ def cmd_send(args):
 
     signed = web3.eth.account.signTransaction(transaction, agents[selectedAgent].priv)
 
-    return web3.eth.sendRawTransaction(signed.rawTransaction)
+    lastTransactionHash = web3.eth.sendRawTransaction(signed.rawTransaction)
+
+    return lastTransactionHash
 
 def cmd_newagent(args):
     if len(args) == 1:
@@ -207,6 +222,52 @@ def cmd_use(args):
         raise InputError("'"+args[0]+"' not in agents")
     selectedAgent = args[0]
 
+def cmd_status(commandArgs):
+    if len(commandArgs) == 0:
+        txHash = lastTransactionHash
+    else:
+        txHash = commandArgs[0]
+    tx = web3.eth.getTransaction(txHash)
+
+    if tx.blockNumber:
+        print("Transaction has been mined in block",tx.blockNumber)
+    else:
+        print("Transaction has not yet been mined.")
+
+def cmd_addcontract(commandArgs):
+    global contracts
+
+    name = commandArgs[0]
+
+    contract = utils.contractInstanceFromAddress(web3, commandArgs[1])
+
+    contracts[name] = contract
+
+def contract_function_call(contractName, functionName, args, amountStr='0E'):
+    contract = contracts[contractName]
+    argTypes = utils.getContractFunctionArgTypes(contract, functionName)
+
+    for i in range(len(argTypes)):
+        if argTypes[i].startswith("uint"):
+            args[i] = int(args[i])
+
+    tx =   {'value': amountStrToWei(amountStr),
+            'nonce': web3.eth.getTransactionCount(agents[selectedAgent].address),
+            'chainId': 1,
+            'gasPrice': web3.toWei('5', 'gwei')}
+
+    tx['gas'] = contract.functions.__dict__[functionName](*args).estimateGas()*2
+
+    tx = contract.functions.__dict__[functionName](*args).buildTransaction(tx)
+
+    pprint(tx)
+
+    signed = web3.eth.account.signTransaction(tx, agents[selectedAgent].priv)
+
+    lastTransactionHash = web3.eth.sendRawTransaction(signed.rawTransaction)
+
+    return lastTransactionHash
+
 def main():
     global agents
     global names
@@ -224,6 +285,11 @@ def main():
     while True:
         try:
             commandString = input(selectedAgent + ' > ')
+
+            if commandString[0] == '~':
+                commandArgs = commandString[1:].split(' ')
+                trackTx(commandString, contract_function_call(commandArgs[0], commandArgs[1], commandArgs[2:]))
+
             commandName = commandString.split(' ')[0]
             commandArgs = commandString.split(' ')[1:]
 
@@ -264,6 +330,14 @@ def main():
                 if len(commandArgs) != 1:
                     raise InputError("1 argument needed (agent-name) for use command")
                 cmd_use(commandArgs)
+
+            if commandName == "status":
+                cmd_status(commandArgs)
+
+            if commandName == "addcontract":
+                if len(commandArgs) != 2:
+                    raise InputError("2 argument needed (name, address) for addcontract command")
+                cmd_addcontract(commandArgs)
 
         except InputError as e:
             print("Error:", str(e))

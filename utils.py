@@ -3,14 +3,15 @@ from urllib.request import urlopen
 # pip install pycrypto
 # from Crypto.Cipher import XOR
 import base64
+from pprint import pprint
 
 def encrypt(key, plaintext):
-  # cipher = XOR.new(key).encrypt(plaintext)
-  return base64.b64encode(plaintext)
+    # cipher = XOR.new(key).encrypt(plaintext)
+    return base64.b64encode(plaintext)
 
 def decrypt(key, ciphertext):
-  # cipher = XOR.new(key).decrypt()
-  return base64.b64decode(ciphertext)
+    # cipher = XOR.new(key).decrypt()
+    return base64.b64decode(ciphertext)
 
 def loadABI(contract_json_filename):
     fullpath_filename = os.path.dirname(os.path.realpath(__file__)) + '/' + contract_json_filename
@@ -29,7 +30,7 @@ def fetchABIFromEtherscan(address):
 	else:
 		return None
 
-def contractInstanceFromAddress(address):
+def contractInstanceFromAddress(web3, address):
 	abi = fetchABIFromEtherscan(address)
 	return web3.eth.contract(address = address, abi = abi)
 
@@ -40,3 +41,17 @@ def getTxHashIfSuccessful(txHash):
 	else:
 		print("Error! expected txhash, but got a " + str(type(txHash)))
 		return False
+
+def getContractFunctionArgTypes(contract, functionName):
+    foundMember = False
+    for member in contract.abi:
+        if member['name'] == functionName:
+            foundMember = True
+            types = []
+            for input in member['inputs']:
+                types.append(input['type'])
+
+    if foundMember:
+        return types
+    else:
+        return None
