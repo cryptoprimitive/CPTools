@@ -4,10 +4,13 @@ from mnemonic import Mnemonic
 from urllib.request import urlopen
 import os.path, json, re, pyperclip
 
+import interfacelog_tools
 from easy_web3_connection import easy_web3_connection
 
 web3 = easy_web3_connection()
 print("web3 connection configured.")
+
+ILInterface = interfacelog_tools.InterfaceLogInterface(web3)
 
 GLOBAL_FROMBLOCK = 4435671
 AGENTS_FILENAME = "agents.json"
@@ -35,7 +38,7 @@ def ethPriceFromCMC():
     return float(decoded[0]['price_usd'])
 
 def usdToEth(usd):
-    return usd/ethPriceFromCMC()
+    return usd / ethPriceFromCMC()
 
 def saveAgents():
     dictToSave = {}
