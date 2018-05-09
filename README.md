@@ -24,7 +24,7 @@ Assuming the name 'anton' has been added with an address via the `addname` comma
 - broadcast the transaction
 - remember the txhash, so that the user can check on the mined status by running the `status` command.
 
-The list of agents and names are preserved between script calls, meaning that the user can immediately send payments to registered names immediately after loading the script (again, assuming that at some point previously, they've funded the 'main' agent and added the named target.)
+The list of agents and names are preserved between script calls, meaning that the user can send payments to registered names immediately after starting the script, if they've set up the relevant name and funded the agents on a previous run.
 
 We are currently extending this functionality to call contract methods and read contract state with the same ease.
 
