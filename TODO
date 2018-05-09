@@ -5,3 +5,6 @@ contract method calling...
   display any return value
   handle constant functions differently
   handle event calls differently (how?)
+
+security
+  agents.json should be encrypted with passphrase

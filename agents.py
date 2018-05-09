@@ -5,14 +5,12 @@ from urllib.request import urlopen
 from pprint import pprint
 import os.path, json, re, pyperclip
 
-import utils, interfacelog_tools
+import utils
 from easy_web3_connection import easy_web3_connection
 
 web3 = easy_web3_connection()
 web3.eth.enable_unaudited_features()
-print("web3 connection configured.")
-
-ILInterface = interfacelog_tools.InterfaceLogInterface(web3)
+print("web3 connection configured.\n")
 
 GLOBAL_FROMBLOCK = 4435671
 AGENTS_FILENAME = "agents.json"
@@ -59,7 +57,7 @@ def createAndSaveNewAgent(name, mnemonic=None, printMnemonic=False):
     if not mnemonic:
         mnemonic = Mnemonic('english').generate()
     if printMnemonic:
-        print("Mnemonic of new agent:\n", mnemonic)
+        print("Mnemonic of new agent '" + name + "':\n", mnemonic, '\n')
     newAgent = Agent(mnemonic)
     agents[name] = newAgent
 
@@ -77,7 +75,8 @@ def loadAgentsOrInitializeAgentsFile():
     try:
         loadAgents()
     except FileNotFoundError:
-        createAndSaveNewAgent('main')
+        print("No agents file found. Initializing with a 'main' agent; this will be autoloaded on the next run.")
+        createAndSaveNewAgent(name='main', printMnemonic=True)
 
 def saveNames():
     with open(NAMES_FILENAME, 'w') as f:
@@ -279,8 +278,10 @@ def main():
 
     selectedAgent = 'main'
 
-    print("Setting gasPrice to 5 gwei.")
+    print("Setting gasPrice to 5 gwei.\n")
     gasPrice = web3.toWei(5,'gwei')
+
+    print("Type \"help\" for info on commands")
 
     while True:
         try:
@@ -292,6 +293,9 @@ def main():
 
             commandName = commandString.split(' ')[0]
             commandArgs = commandString.split(' ')[1:]
+
+            if commandName == 'help':
+                print(helpMessage)
 
             if commandName == 'q':
                 return
@@ -347,6 +351,29 @@ def main():
                 print("Error: insufficient funds")
             else:
                 raise
+
+helpMessage = """
+
+Commands:
+
+- help: show this message
+- q: quit
+- gp [value]: set gas price to [value]
+- send [target] [value]: send [value] to [target]
+- newagent [seed-phrase]: if [seed-phrase] is not supplied, create new agent and print seed phrase. Otherwise, restore agent from seed and add.
+- agents: print a list of all loaded agents
+- copy [agent]: copy address of agent to clipboard. If [agent] is not supplied, use currently selected agent.
+- balance [agent]: print balance of [agent]. If [agent] is not supplied, use currently selected agent.
+- addname [name] [address]: add [address] to addressbook under [name].
+- names: print all names in addressbook.
+- use [agent]: select [agent].
+- status [txhash]: print whether transaction has been mined. If [txhash] is not supplied AND a method had been called previously, check the status of that call.
+- addcontract [name] [address]: add a named contract. Then call contract methods with ~contractname.functionname(args).
+
+Any time an address is needed, the name of an agent or addressbook entry can be used instead.
+Any time an amount is needed, it can be specified in e (ether), w (wei), gw (gigawei) or $ (USD). If $ is used, coinmarketcap.com is queried for the exchange rate.
+(As an example of the two above, assuming a name "anton" has been added: "send anton $2" will convert $2 to the appropriate amount and send it to the address logged for "anton").
+"""
 
 if __name__ == "__main__":
     main()
