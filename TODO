@@ -1,0 +1,7 @@
+help message - write summary of commands
+  (then copy to readme)
+
+contract method calling...
+  display any return value
+  handle constant functions differently
+  handle event calls differently (how?)
